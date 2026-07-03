@@ -1,4 +1,4 @@
-# StockFácil 
+# StockFácil
 
 Sistema web para la administración de inventario en microempresas como tiendas de abarrotes, papelerías, misceláneas y pequeños comercios familiares.
 
