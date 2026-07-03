@@ -20,3 +20,18 @@ StockFácil permite registrar productos, controlar entradas y salidas de mercanc
 
 - Node.js v18 o superior
 - npm v9 o superior
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Inicia el servidor en modo desarrollo con recarga automática |
+| `npm run build` | Compila el proyecto TypeScript a JavaScript |
+| `npm run build:clean` | Limpia la carpeta `dist/` y compila de nuevo |
+| `npm start` | Inicia el servidor en modo producción |
+| `npm run lint` | Revisa el código con ESLint |
+| `npm run lint:fix` | Corrige automáticamente los errores de ESLint |
+| `npm run format` | Formatea el código con Prettier |
+| `npm run format:check` | Verifica el formato sin modificar archivos |
+| `npm test` | Corre las pruebas |
+
