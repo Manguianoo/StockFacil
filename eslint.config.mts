@@ -6,7 +6,7 @@ import prettier from "eslint-config-prettier";
 
 export default defineConfig([
   {
-    ignores: ["dist/**", "node_modules/**"], //ignorar cualquier archivo en dist
+    ignores: ["dist/**", "node_modules/**", "jest.config.js"], //ignorar archivos generados y configuración CommonJS
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
@@ -16,6 +16,8 @@ export default defineConfig([
   },
 
   ...tseslint.configs.recommended,
+
+  prettier,
 
   {
     files: ["src/**/*.ts"],

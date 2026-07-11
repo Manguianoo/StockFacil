@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/auth";
 import productRouter from "./productos";
 import categoriaRouter from "./categorias";
 import proveedorRouter from "./proveedores";
@@ -9,11 +8,22 @@ import reporteRouter from "./reportes";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.send("Raiz (Login)");
+router.get("/", (_req, res) => {
+  res.json({ nombre: "StockFácil API", estado: "ok", documentacion: "/api" });
 });
 
-//router.use(authMiddleware);
+router.get("/api", (_req, res) => {
+  res.json({
+    recursos: [
+      "/productos",
+      "/categorias",
+      "/proveedores",
+      "/inventario",
+      "/ventas",
+      "/reportes",
+    ],
+  });
+});
 router.use("/productos", productRouter);
 router.use("/categorias", categoriaRouter);
 router.use("/proveedores", proveedorRouter);

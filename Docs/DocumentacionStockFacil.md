@@ -18,9 +18,33 @@ La solución estará orientada a microempresas que necesitan una herramienta sen
 - **Prettier** — formato de código
 - **Jest** — pruebas
 
+## Estado de implementación
+
+La API REST ya cuenta con conexión MongoDB mediante Mongoose, modelos persistentes, CRUD, validaciones, manejo centralizado de errores y pruebas de integración.
+
+### Arquitectura
+
+- `src/config`: conexión y ciclo de vida de MongoDB.
+- `src/models`: esquemas de categorías, proveedores, productos, movimientos y ventas.
+- `src/controllers`: reglas del negocio y operaciones persistentes.
+- `src/routes`: endpoints REST.
+- `src/middlewares`: respuestas de errores y rutas inexistentes.
+- `src/__tests__`: demo automatizada del CRUD con MongoDB temporal.
+
+### Reglas y validaciones
+
+- Los campos obligatorios se validan antes de escribir.
+- SKU y nombre de categoría son únicos.
+- Precios y existencias no aceptan números negativos.
+- Categorías y proveedores referenciados deben existir.
+- No se permiten salidas o ventas sin stock suficiente.
+- Las ventas calculan el total desde el precio guardado del producto y descuentan inventario.
+- No se elimina una categoría o proveedor que todavía tenga productos asociados.
+- Identificadores inválidos, duplicados y recursos inexistentes producen respuestas HTTP consistentes.
+
 ## Base de datos
 
-El proyecto utilizará **MongoDB** como base de datos principal. La información de productos, categorías, proveedores, inventario, ventas, reportes y usuarios se almacenará en colecciones documentales.
+El proyecto utiliza **MongoDB** como base de datos principal. La información de productos, categorías, proveedores, inventario y ventas se almacena en colecciones documentales. Los reportes se calculan sobre esos datos.
 
 MongoDB se eligió porque permite manejar estructuras flexibles, facilita el crecimiento del sistema y se adapta bien a un inventario donde los productos pueden tener datos variables según el giro del negocio.
 
@@ -70,14 +94,14 @@ El objetivo es que StockFácil sea una herramienta práctica para negocios que n
 
 ## Scripts
 
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Inicia el servidor en modo desarrollo con recarga automática |
-| `npm run build` | Compila el proyecto TypeScript a JavaScript |
-| `npm run build:clean` | Limpia la carpeta `dist/` y compila de nuevo |
-| `npm start` | Inicia el servidor en modo producción |
-| `npm run lint` | Revisa el código con ESLint |
-| `npm run lint:fix` | Corrige automáticamente los errores de ESLint |
-| `npm run format` | Formatea el código con Prettier |
-| `npm run format:check` | Verifica el formato sin modificar archivos |
-| `npm test` | Corre las pruebas |
+| Comando                | Descripción                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `npm run dev`          | Inicia el servidor en modo desarrollo con recarga automática |
+| `npm run build`        | Compila el proyecto TypeScript a JavaScript                  |
+| `npm run build:clean`  | Limpia la carpeta `dist/` y compila de nuevo                 |
+| `npm start`            | Inicia el servidor en modo producción                        |
+| `npm run lint`         | Revisa el código con ESLint                                  |
+| `npm run lint:fix`     | Corrige automáticamente los errores de ESLint                |
+| `npm run format`       | Formatea el código con Prettier                              |
+| `npm run format:check` | Verifica el formato sin modificar archivos                   |
+| `npm test`             | Corre las pruebas                                            |

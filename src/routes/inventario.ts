@@ -9,8 +9,8 @@ import {
 const router = Router();
 
 router.get("/", getAllMovimientos);
-router.get("/entrada", registrarEntrada); //será POST
-router.get("/salida", registrarSalida); //será POST
+router.post("/entrada", registrarEntrada);
+router.post("/salida", registrarSalida);
 router.get("/:id", getMovimientoById);
 
 export default router;

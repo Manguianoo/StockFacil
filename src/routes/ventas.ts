@@ -9,6 +9,6 @@ const router = Router();
 
 router.get("/", getAllVentas);
 router.get("/:id", getVentaById);
-router.post("/", createVenta); //detallar despues
+router.post("/", createVenta);
 
 export default router;

@@ -1,4 +1,4 @@
-# StockFácil 
+# StockFácil
 
 Sistema web para la administración de inventario en microempresas como tiendas de abarrotes, papelerías, misceláneas y pequeños comercios familiares.
 
@@ -67,17 +67,59 @@ El objetivo es que StockFácil sea una herramienta práctica para negocios que n
 
 - Node.js v18 o superior
 - npm v9 o superior
+- MongoDB v7 o superior (local o MongoDB Atlas)
+
+## Instalación y ejecución
+
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Configure `MONGODB_URI` en `.env`. La API estará disponible en `http://localhost:3000`.
+
+## API REST implementada
+
+| Recurso        | Operaciones                                      |
+| -------------- | ------------------------------------------------ |
+| `/categorias`  | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id` |
+| `/proveedores` | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id` |
+| `/productos`   | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id` |
+| `/inventario`  | GET, GET `/:id`, POST `/entrada`, POST `/salida` |
+| `/ventas`      | GET, GET `/:id`, POST                            |
+| `/reportes`    | GET `/stock-bajo`, `/ventas`, `/inventario`      |
+
+Todas las respuestas son JSON. Los errores usan códigos HTTP `400`, `404`, `409` y `500` según corresponda.
+
+### Demo rápida del CRUD
+
+```bash
+# Crear categoría
+curl -X POST http://localhost:3000/categorias -H 'Content-Type: application/json' \
+  -d '{"nombre":"Bebidas","descripcion":"Bebidas y refrescos"}'
+
+# Copiar el _id de la respuesta en CATEGORIA_ID y crear producto
+curl -X POST http://localhost:3000/productos -H 'Content-Type: application/json' \
+  -d '{"nombre":"Agua 1L","sku":"AGUA-001","precio":18,"stock":20,"stockMinimo":5,"categoria":"CATEGORIA_ID"}'
+
+curl http://localhost:3000/productos
+curl -X PUT http://localhost:3000/productos/PRODUCTO_ID -H 'Content-Type: application/json' -d '{"precio":19}'
+curl -X DELETE http://localhost:3000/productos/PRODUCTO_ID
+```
+
+El [diagrama de base de datos](Docs/DiagramaBaseDatos.md), la [evidencia del equipo](Docs/EvidenciaEquipo.md) y la [documentación técnica](Docs/DocumentacionStockFacil.md) completan la entrega.
 
 ## Scripts
 
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Inicia el servidor en modo desarrollo con recarga automática |
-| `npm run build` | Compila el proyecto TypeScript a JavaScript |
-| `npm run build:clean` | Limpia la carpeta `dist/` y compila de nuevo |
-| `npm start` | Inicia el servidor en modo producción |
-| `npm run lint` | Revisa el código con ESLint |
-| `npm run lint:fix` | Corrige automáticamente los errores de ESLint |
-| `npm run format` | Formatea el código con Prettier |
-| `npm run format:check` | Verifica el formato sin modificar archivos |
-| `npm test` | Corre las pruebas |
+| Comando                | Descripción                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `npm run dev`          | Inicia el servidor en modo desarrollo con recarga automática |
+| `npm run build`        | Compila el proyecto TypeScript a JavaScript                  |
+| `npm run build:clean`  | Limpia la carpeta `dist/` y compila de nuevo                 |
+| `npm start`            | Inicia el servidor en modo producción                        |
+| `npm run lint`         | Revisa el código con ESLint                                  |
+| `npm run lint:fix`     | Corrige automáticamente los errores de ESLint                |
+| `npm run format`       | Formatea el código con Prettier                              |
+| `npm run format:check` | Verifica el formato sin modificar archivos                   |
+| `npm test`             | Corre las pruebas                                            |
