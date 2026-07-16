@@ -20,7 +20,7 @@ La solución estará orientada a microempresas que necesitan una herramienta sen
 
 ## Estado de implementación
 
-La API REST ya cuenta con conexión MongoDB mediante Mongoose, modelos persistentes, CRUD, validaciones, manejo centralizado de errores y pruebas de integración.
+La aplicación ya cuenta con interfaz web adaptable, conexión MongoDB mediante Mongoose, modelos persistentes, CRUD, autenticación JWT, permisos por rol, correo SMTP opcional, actualizaciones con Socket.IO, validaciones, transacciones, manejo centralizado de errores y pruebas de integración.
 
 ### Arquitectura
 
@@ -30,6 +30,8 @@ La API REST ya cuenta con conexión MongoDB mediante Mongoose, modelos persisten
 - `src/routes`: endpoints REST.
 - `src/middlewares`: respuestas de errores y rutas inexistentes.
 - `src/__tests__`: demo automatizada del CRUD con MongoDB temporal.
+- `src/services`: correo, eventos en tiempo real y alertas de stock.
+- `public`: interfaz web de administración y operación.
 
 ### Reglas y validaciones
 
@@ -50,7 +52,7 @@ MongoDB se eligió porque permite manejar estructuras flexibles, facilita el cre
 
 ## Roles y permisos
 
-StockFácil contará con una definición clara de roles para delimitar las acciones disponibles dentro del sistema:
+StockFácil aplica roles mediante tokens JWT y middleware de autorización:
 
 - **Administrador**: podrá gestionar usuarios, productos, categorías, proveedores, inventario, ventas y reportes. También tendrá acceso a la configuración general del sistema.
 - **Usuario operativo**: podrá consultar productos, registrar movimientos de inventario y capturar ventas, pero no podrá modificar configuraciones sensibles ni administrar usuarios.
@@ -59,7 +61,7 @@ Esta separación ayuda a proteger la información del negocio y evita que usuari
 
 ## Envío de correos
 
-El sistema contempla el envío de correos electrónicos para apoyar procesos importantes del negocio, como:
+El sistema envía correos mediante SMTP configurable para apoyar procesos importantes del negocio, como:
 
 - Confirmación de usuarios registrados.
 - Envío de reportes de inventario o ventas.
@@ -70,7 +72,7 @@ Estas notificaciones permitirán que los administradores reaccionen con mayor ra
 
 ## Comunicación en tiempo real
 
-StockFácil incluirá comunicación en tiempo real para reflejar cambios relevantes sin que el usuario tenga que recargar manualmente la página.
+StockFácil utiliza Socket.IO para reflejar cambios relevantes sin que el usuario tenga que recargar manualmente la página.
 
 Esta funcionalidad será útil para actualizar existencias, mostrar alertas de bajo stock, registrar ventas recientes y mantener sincronizada la información cuando varias personas estén usando el sistema al mismo tiempo.
 

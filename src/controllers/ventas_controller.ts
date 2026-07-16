@@ -3,6 +3,9 @@ import { Venta } from "../models/Venta";
 import { Producto } from "../models/Producto";
 import { MovimientoInventario } from "../models/MovimientoInventario";
 import { AppError } from "../errors/AppError";
+import mongoose from "mongoose";
+import { emitRealtime } from "../services/realtime";
+import { notifyStockIfNeeded } from "../services/stockNotifications";
 
 interface VentaInput {
   producto: string;
@@ -11,7 +14,10 @@ interface VentaInput {
 
 export async function getAllVentas(_req: Request, res: Response) {
   res.json(
-    await Venta.find().populate("productos.producto").sort({ createdAt: -1 }),
+    await Venta.find()
+      .populate("productos.producto")
+      .populate("registradaPor", "nombre email rol")
+      .sort({ createdAt: -1 }),
   );
 }
 export async function getVentaById(req: Request, res: Response) {
@@ -31,61 +37,73 @@ export async function createVenta(req: Request, res: Response) {
       400,
     );
 
-  const detalles: Array<{
-    producto: string;
-    cantidad: number;
-    precioUnitario: number;
-    subtotal: number;
-  }> = [];
-  const productosActualizados: Array<{
-    producto: InstanceType<typeof Producto>;
-    anterior: number;
-    cantidad: number;
-  }> = [];
-
-  for (const item of items) {
-    if (
-      !item.producto ||
-      !Number.isInteger(item.cantidad) ||
-      item.cantidad <= 0
-    )
-      throw new AppError(
-        "Cada producto requiere identificador y cantidad entera positiva",
-        400,
+  const session = await mongoose.startSession();
+  let venta: InstanceType<typeof Venta> | undefined;
+  try {
+    await session.withTransaction(async () => {
+      const detalles: Array<{
+        producto: string;
+        cantidad: number;
+        precioUnitario: number;
+        subtotal: number;
+      }> = [];
+      for (const item of items) {
+        if (
+          !item.producto ||
+          !Number.isInteger(item.cantidad) ||
+          item.cantidad <= 0
+        )
+          throw new AppError(
+            "Cada producto requiere identificador y cantidad entera positiva",
+            400,
+          );
+        const producto = await Producto.findById(item.producto).session(
+          session,
+        );
+        if (!producto)
+          throw new AppError(`Producto no encontrado: ${item.producto}`, 404);
+        if (producto.stock < item.cantidad)
+          throw new AppError(`Stock insuficiente para ${producto.nombre}`, 409);
+        const anterior = producto.stock;
+        producto.stock -= item.cantidad;
+        await producto.save({ session });
+        detalles.push({
+          producto: producto.id,
+          cantidad: item.cantidad,
+          precioUnitario: producto.precio,
+          subtotal: producto.precio * item.cantidad,
+        });
+        await MovimientoInventario.create(
+          [
+            {
+              producto: producto.id,
+              tipo: "salida",
+              cantidad: item.cantidad,
+              motivo: "Venta",
+              stockAnterior: anterior,
+              stockNuevo: producto.stock,
+              registradoPor: req.user?.id,
+            },
+          ],
+          { session },
+        );
+      }
+      [venta] = await Venta.create(
+        [
+          {
+            productos: detalles,
+            total: detalles.reduce((total, item) => total + item.subtotal, 0),
+            registradaPor: req.user?.id,
+          },
+        ],
+        { session },
       );
-    const producto = await Producto.findById(item.producto);
-    if (!producto)
-      throw new AppError(`Producto no encontrado: ${item.producto}`, 404);
-    if (producto.stock < item.cantidad)
-      throw new AppError(`Stock insuficiente para ${producto.nombre}`, 409);
-    detalles.push({
-      producto: producto.id,
-      cantidad: item.cantidad,
-      precioUnitario: producto.precio,
-      subtotal: producto.precio * item.cantidad,
     });
-    productosActualizados.push({
-      producto,
-      anterior: producto.stock,
-      cantidad: item.cantidad,
-    });
+  } finally {
+    await session.endSession();
   }
-
-  for (const item of productosActualizados) {
-    item.producto.stock -= item.cantidad;
-    await item.producto.save();
-    await MovimientoInventario.create({
-      producto: item.producto.id,
-      tipo: "salida",
-      cantidad: item.cantidad,
-      motivo: "Venta",
-      stockAnterior: item.anterior,
-      stockNuevo: item.producto.stock,
-    });
-  }
-  const venta = await Venta.create({
-    productos: detalles,
-    total: detalles.reduce((total, item) => total + item.subtotal, 0),
-  });
+  if (!venta) throw new AppError("No fue posible registrar la venta", 500);
+  emitRealtime("venta:registrada", venta);
+  for (const item of items) void notifyStockIfNeeded(item.producto);
   res.status(201).json(venta);
 }

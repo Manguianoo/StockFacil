@@ -4,6 +4,7 @@ import { Categoria } from "../models/Categoria";
 import { Proveedor } from "../models/Proveedor";
 import { AppError } from "../errors/AppError";
 import { requireFields, requireNonEmptyUpdate } from "../utils/validation";
+import { emitRealtime } from "../services/realtime";
 
 async function validateRelations(body: Record<string, unknown>) {
   if (body.categoria && !(await Categoria.exists({ _id: body.categoria })))
@@ -32,7 +33,9 @@ export async function getProductoById(req: Request, res: Response) {
 export async function createProducto(req: Request, res: Response) {
   requireFields(req.body, ["nombre", "sku", "precio", "categoria"]);
   await validateRelations(req.body);
-  res.status(201).json(await Producto.create(req.body));
+  const product = await Producto.create(req.body);
+  emitRealtime("producto:creado", product);
+  res.status(201).json(product);
 }
 export async function updateProducto(req: Request, res: Response) {
   requireNonEmptyUpdate(req.body);
@@ -42,6 +45,7 @@ export async function updateProducto(req: Request, res: Response) {
     runValidators: true,
   });
   if (!item) throw new AppError("Producto no encontrado", 404);
+  emitRealtime("producto:actualizado", item);
   res.json(item);
 }
 export async function deleteProducto(req: Request, res: Response) {

@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { Producto } from "../models/Producto";
 import { Venta } from "../models/Venta";
 import { MovimientoInventario } from "../models/MovimientoInventario";
+import { AppError } from "../errors/AppError";
+import { sendEmail } from "../services/emailService";
 
 export async function getReporteStockBajo(_req: Request, res: Response) {
   const productos = await Producto.find({
@@ -37,4 +39,29 @@ export async function getReporteInventario(_req: Request, res: Response) {
       0,
     ),
   });
+}
+
+export async function sendReporteEmail(req: Request, res: Response) {
+  if (!req.user) throw new AppError("Autenticación requerida", 401);
+  const [ventas, productos, movimientos] = await Promise.all([
+    Venta.find(),
+    Producto.find(),
+    MovimientoInventario.countDocuments(),
+  ]);
+  const totalVentas = ventas.reduce((sum, venta) => sum + venta.total, 0);
+  const stockBajo = productos.filter(
+    (producto) => producto.activo && producto.stock <= producto.stockMinimo,
+  ).length;
+  const sent = await sendEmail({
+    to: req.user.email,
+    subject: "Resumen de StockFácil",
+    text: [
+      `Ventas registradas: ${ventas.length}`,
+      `Total vendido: $${totalVentas.toFixed(2)}`,
+      `Movimientos de inventario: ${movimientos}`,
+      `Productos con stock bajo: ${stockBajo}`,
+    ].join("\n"),
+  });
+  if (!sent) throw new AppError("Configure SMTP para enviar reportes", 503);
+  res.json({ message: `Reporte enviado a ${req.user.email}` });
 }

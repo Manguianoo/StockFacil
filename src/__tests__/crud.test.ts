@@ -1,15 +1,34 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createApp } from "../app";
-import { afterAll, afterEach, beforeAll, expect, test } from "@jest/globals";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  expect,
+  test,
+} from "@jest/globals";
 
 const app = createApp();
-let mongo: MongoMemoryServer;
+let mongo: MongoMemoryReplSet;
+let authorization: string;
 
 beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
+  process.env.JWT_SECRET = "test-secret-with-at-least-32-characters";
+  process.env.NODE_ENV = "test";
+  mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   await mongoose.connect(mongo.getUri());
+});
+
+beforeEach(async () => {
+  const response = await request(app).post("/auth/register").send({
+    nombre: "Admin Test",
+    email: "admin@stockfacil.test",
+    password: "Password123",
+  });
+  authorization = `Bearer ${response.body.token}`;
 });
 
 afterEach(async () => {
@@ -24,71 +43,101 @@ afterAll(async () => {
 test("realiza el CRUD de categorías", async () => {
   const created = await request(app)
     .post("/categorias")
+    .set("Authorization", authorization)
     .send({ nombre: "Bebidas", descripcion: "Productos líquidos" });
   expect(created.status).toBe(201);
 
-  const list = await request(app).get("/categorias");
+  const list = await request(app)
+    .get("/categorias")
+    .set("Authorization", authorization);
   expect(list.body).toHaveLength(1);
 
   const updated = await request(app)
     .put(`/categorias/${created.body._id}`)
+    .set("Authorization", authorization)
     .send({ nombre: "Bebidas frías" });
   expect(updated.status).toBe(200);
   expect(updated.body.nombre).toBe("Bebidas frías");
 
-  const deleted = await request(app).delete(`/categorias/${created.body._id}`);
+  const deleted = await request(app)
+    .delete(`/categorias/${created.body._id}`)
+    .set("Authorization", authorization);
   expect(deleted.status).toBe(204);
   expect(
-    (await request(app).get(`/categorias/${created.body._id}`)).status,
+    (
+      await request(app)
+        .get(`/categorias/${created.body._id}`)
+        .set("Authorization", authorization)
+    ).status,
   ).toBe(404);
 });
 
 test("crea un producto y registra movimientos de inventario", async () => {
   const categoria = await request(app)
     .post("/categorias")
+    .set("Authorization", authorization)
     .send({ nombre: "Abarrotes" });
-  const producto = await request(app).post("/productos").send({
-    nombre: "Arroz",
-    sku: "ARR-001",
-    precio: 25.5,
-    stock: 10,
-    stockMinimo: 3,
-    categoria: categoria.body._id,
-  });
+  const producto = await request(app)
+    .post("/productos")
+    .set("Authorization", authorization)
+    .send({
+      nombre: "Arroz",
+      sku: "ARR-001",
+      precio: 25.5,
+      stock: 10,
+      stockMinimo: 3,
+      categoria: categoria.body._id,
+    });
   expect(producto.status).toBe(201);
 
-  const salida = await request(app).post("/inventario/salida").send({
-    producto: producto.body._id,
-    cantidad: 4,
-    motivo: "Venta mostrador",
-  });
+  const salida = await request(app)
+    .post("/inventario/salida")
+    .set("Authorization", authorization)
+    .send({
+      producto: producto.body._id,
+      cantidad: 4,
+      motivo: "Venta mostrador",
+    });
   expect(salida.status).toBe(201);
   expect(salida.body.stockNuevo).toBe(6);
 
-  const entrada = await request(app).post("/inventario/entrada").send({
-    producto: producto.body._id,
-    cantidad: 10,
-    motivo: "Compra proveedor",
-  });
+  const entrada = await request(app)
+    .post("/inventario/entrada")
+    .set("Authorization", authorization)
+    .send({
+      producto: producto.body._id,
+      cantidad: 10,
+      motivo: "Compra proveedor",
+    });
   expect(entrada.body.stockNuevo).toBe(16);
 });
 
 test("valida datos y evita salidas sin stock", async () => {
   expect(
-    (await request(app).post("/productos").send({ nombre: "X" })).status,
+    (
+      await request(app)
+        .post("/productos")
+        .set("Authorization", authorization)
+        .send({ nombre: "X" })
+    ).status,
   ).toBe(400);
   const categoria = await request(app)
     .post("/categorias")
+    .set("Authorization", authorization)
     .send({ nombre: "Limpieza" });
-  const producto = await request(app).post("/productos").send({
-    nombre: "Jabón",
-    sku: "JAB-1",
-    precio: 12,
-    stock: 1,
-    categoria: categoria.body._id,
-  });
+  const producto = await request(app)
+    .post("/productos")
+    .set("Authorization", authorization)
+    .send({
+      nombre: "Jabón",
+      sku: "JAB-1",
+      precio: 12,
+      stock: 1,
+      categoria: categoria.body._id,
+    });
   const response = await request(app)
     .post("/inventario/salida")
+    .set("Authorization", authorization)
     .send({ producto: producto.body._id, cantidad: 2, motivo: "Venta" });
   expect(response.status).toBe(409);
   expect(response.body.error).toBe("Stock insuficiente");
@@ -97,20 +146,58 @@ test("valida datos y evita salidas sin stock", async () => {
 test("registra una venta, calcula total y descuenta existencias", async () => {
   const categoria = await request(app)
     .post("/categorias")
+    .set("Authorization", authorization)
     .send({ nombre: "Dulces" });
-  const producto = await request(app).post("/productos").send({
-    nombre: "Chocolate",
-    sku: "CHO-1",
-    precio: 15,
-    stock: 8,
-    categoria: categoria.body._id,
-  });
+  const producto = await request(app)
+    .post("/productos")
+    .set("Authorization", authorization)
+    .send({
+      nombre: "Chocolate",
+      sku: "CHO-1",
+      precio: 15,
+      stock: 8,
+      categoria: categoria.body._id,
+    });
   const venta = await request(app)
     .post("/ventas")
+    .set("Authorization", authorization)
     .send({ productos: [{ producto: producto.body._id, cantidad: 3 }] });
   expect(venta.status).toBe(201);
   expect(venta.body.total).toBe(45);
   expect(
-    (await request(app).get(`/productos/${producto.body._id}`)).body.stock,
+    (
+      await request(app)
+        .get(`/productos/${producto.body._id}`)
+        .set("Authorization", authorization)
+    ).body.stock,
   ).toBe(5);
+});
+
+test("autentica usuarios y aplica permisos por rol", async () => {
+  expect((await request(app).get("/productos")).status).toBe(401);
+
+  const created = await request(app)
+    .post("/auth/register")
+    .set("Authorization", authorization)
+    .send({
+      nombre: "Operador",
+      email: "operador@stockfacil.test",
+      password: "Password123",
+      rol: "operativo",
+    });
+  expect(created.status).toBe(201);
+
+  const operativeToken = `Bearer ${created.body.token}`;
+  expect(
+    (
+      await request(app)
+        .post("/categorias")
+        .set("Authorization", operativeToken)
+        .send({ nombre: "Sin permiso" })
+    ).status,
+  ).toBe(403);
+  expect(
+    (await request(app).get("/productos").set("Authorization", operativeToken))
+      .status,
+  ).toBe(200);
 });

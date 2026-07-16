@@ -6,12 +6,14 @@ import {
   updateProducto,
   deleteProducto,
 } from "../controllers/productos_controller";
+import { allowRoles, requireAuth } from "../middlewares/auth";
 const router = Router();
 
+router.use(requireAuth);
 router.get("/", getAllProductos);
 router.get("/:id", getProductoById);
-router.post("/", createProducto);
-router.put("/:id", updateProducto);
-router.delete("/:id", deleteProducto);
+router.post("/", allowRoles("administrador"), createProducto);
+router.put("/:id", allowRoles("administrador"), updateProducto);
+router.delete("/:id", allowRoles("administrador"), deleteProducto);
 
 export default router;

@@ -18,6 +18,7 @@ const ventaSchema = new Schema(
       validate: [(v: unknown[]) => v.length > 0, "La venta requiere productos"],
     },
     total: { type: Number, required: true, min: 0 },
+    registradaPor: { type: Schema.Types.ObjectId, ref: "Usuario" },
   },
   { timestamps: true, versionKey: false },
 );

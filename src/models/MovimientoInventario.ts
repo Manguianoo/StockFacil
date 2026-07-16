@@ -8,6 +8,7 @@ const movimientoSchema = new Schema(
     motivo: { type: String, required: true, trim: true, maxlength: 200 },
     stockAnterior: { type: Number, required: true, min: 0 },
     stockNuevo: { type: Number, required: true, min: 0 },
+    registradoPor: { type: Schema.Types.ObjectId, ref: "Usuario" },
   },
   { timestamps: true, versionKey: false },
 );

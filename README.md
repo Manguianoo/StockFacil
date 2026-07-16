@@ -24,21 +24,22 @@ El proyecto utilizará **MongoDB** como base de datos principal. La información
 
 MongoDB se eligió porque permite manejar estructuras flexibles, facilita el crecimiento del sistema y se adapta bien a un inventario donde los productos pueden tener datos variables según el giro del negocio.
 
-## Roles y permisos
+## Aplicación web, autenticación y permisos
 
-StockFácil contará con una definición clara de roles para delimitar las acciones disponibles dentro del sistema:
+Al abrir `http://localhost:3000` se muestra la interfaz web de StockFácil. La primera cuenta registrada se convierte en administradora; a partir de ese momento solo un administrador puede crear usuarios adicionales.
 
-- **Administrador**: podrá gestionar usuarios, productos, categorías, proveedores, inventario, ventas y reportes. También tendrá acceso a la configuración general del sistema.
-- **Usuario operativo**: podrá consultar productos, registrar movimientos de inventario y capturar ventas, pero no podrá modificar configuraciones sensibles ni administrar usuarios.
+- **Administrador**: gestiona usuarios, productos, categorías, proveedores, inventario, ventas y reportes.
+- **Usuario operativo**: consulta productos y registra movimientos de inventario y ventas.
 
-Esta separación ayuda a proteger la información del negocio y evita que usuarios operativos realicen cambios administrativos por error.
+Las contraseñas se almacenan con hash `bcrypt`, la API utiliza JWT Bearer y la recuperación de contraseña usa enlaces de un solo uso con vigencia de 30 minutos.
 
 ## Envío de correos
 
-El sistema contempla el envío de correos electrónicos para apoyar procesos importantes del negocio, como:
+Al configurar SMTP, el sistema envía:
 
-- Confirmación de usuarios registrados.
-- Envío de reportes de inventario o ventas.
+- Bienvenida para usuarios registrados.
+- Recuperación de contraseña.
+- Resúmenes de inventario y ventas solicitados desde la interfaz.
 - Notificaciones de productos con bajo stock.
 - Avisos relacionados con faltantes o movimientos relevantes del inventario.
 
@@ -46,7 +47,7 @@ Estas notificaciones permitirán que los administradores reaccionen con mayor ra
 
 ## Comunicación en tiempo real
 
-StockFácil incluirá comunicación en tiempo real para reflejar cambios relevantes sin que el usuario tenga que recargar manualmente la página.
+StockFácil usa Socket.IO autenticado con JWT para reflejar productos, existencias, ventas y alertas sin recargar la página.
 
 Esta funcionalidad será útil para actualizar existencias, mostrar alertas de bajo stock, registrar ventas recientes y mantener sincronizada la información cuando varias personas estén usando el sistema al mismo tiempo.
 
@@ -67,7 +68,7 @@ El objetivo es que StockFácil sea una herramienta práctica para negocios que n
 
 - Node.js v18 o superior
 - npm v9 o superior
-- MongoDB v7 o superior (local o MongoDB Atlas)
+- MongoDB v7 o superior en modo replica set (o MongoDB Atlas)
 
 ## Instalación y ejecución
 
@@ -77,18 +78,23 @@ cp .env.example .env
 npm run dev
 ```
 
-Configure `MONGODB_URI` en `.env`. La API estará disponible en `http://localhost:3000`.
+Configure `MONGODB_URI` y cambie `JWT_SECRET` en `.env`. Las transacciones de ventas e inventario requieren MongoDB Atlas o un replica set local; esto evita dejar existencias parcialmente actualizadas. La aplicación y la API estarán disponibles en `http://localhost:3000`.
+
+SMTP es opcional para ejecutar el sistema. Para enviar mensajes reales configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` y `EMAIL_FROM`.
 
 ## API REST implementada
 
-| Recurso        | Operaciones                                      |
-| -------------- | ------------------------------------------------ |
-| `/categorias`  | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id` |
-| `/proveedores` | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id` |
-| `/productos`   | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id` |
-| `/inventario`  | GET, GET `/:id`, POST `/entrada`, POST `/salida` |
-| `/ventas`      | GET, GET `/:id`, POST                            |
-| `/reportes`    | GET `/stock-bajo`, `/ventas`, `/inventario`      |
+| Recurso        | Operaciones                                            |
+| -------------- | ------------------------------------------------------ |
+| `/categorias`  | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id`       |
+| `/proveedores` | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id`       |
+| `/productos`   | GET, GET `/:id`, POST, PUT `/:id`, DELETE `/:id`       |
+| `/inventario`  | GET, GET `/:id`, POST `/entrada`, POST `/salida`       |
+| `/ventas`      | GET, GET `/:id`, POST                                  |
+| `/reportes`    | GET `/stock-bajo`, `/ventas`, `/inventario`            |
+| `/auth`        | Registro inicial, login, usuario actual y recuperación |
+
+Las rutas de negocio requieren `Authorization: Bearer <token>`. `POST /reportes/email` envía el resumen al administrador autenticado. Los eventos Socket.IO disponibles son `producto:creado`, `producto:actualizado`, `inventario:actualizado`, `venta:registrada` y `stock:bajo`.
 
 Todas las respuestas son JSON. Los errores usan códigos HTTP `400`, `404`, `409` y `500` según corresponda.
 

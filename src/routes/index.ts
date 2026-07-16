@@ -5,6 +5,7 @@ import proveedorRouter from "./proveedores";
 import inventarioRouter from "./inventario";
 import ventasRouter from "./ventas";
 import reporteRouter from "./reportes";
+import authRouter from "./auth";
 
 const router = Router();
 
@@ -21,9 +22,11 @@ router.get("/api", (_req, res) => {
       "/inventario",
       "/ventas",
       "/reportes",
+      "/auth",
     ],
   });
 });
+router.use("/auth", authRouter);
 router.use("/productos", productRouter);
 router.use("/categorias", categoriaRouter);
 router.use("/proveedores", proveedorRouter);
