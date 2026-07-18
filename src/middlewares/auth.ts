@@ -1,35 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError";
-import { RolUsuario, Usuario } from "../models/Usuario";
-
-interface TokenPayload {
-  sub: string;
-}
-
-export function getJwtSecret() {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new AppError("JWT_SECRET no está configurado", 500);
-  return secret;
-}
+import { RolUsuario } from "../models/Usuario";
+import { authenticateToken } from "../services/authService";
 
 async function resolveUser(req: Request) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) return undefined;
 
-  try {
-    const payload = jwt.verify(header.slice(7), getJwtSecret()) as TokenPayload;
-    const user = await Usuario.findById(payload.sub);
-    if (!user || !user.activo) return undefined;
-    return {
-      id: user.id,
-      nombre: user.nombre,
-      email: user.email,
-      rol: user.rol as RolUsuario,
-    };
-  } catch {
-    return undefined;
-  }
+  return authenticateToken(header.slice(7));
 }
 
 export async function optionalAuth(

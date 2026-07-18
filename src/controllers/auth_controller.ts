@@ -1,10 +1,9 @@
 import { createHash, randomBytes } from "crypto";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError";
-import { getJwtSecret } from "../middlewares/auth";
 import { RolUsuario, Usuario } from "../models/Usuario";
+import { createAccessToken } from "../services/authService";
 import { sendEmailSafely } from "../services/emailService";
 import { requireFields } from "../utils/validation";
 
@@ -21,13 +20,6 @@ function publicUser(user: InstanceType<typeof Usuario>) {
     rol: user.rol,
     activo: user.activo,
   };
-}
-
-function createToken(user: InstanceType<typeof Usuario>) {
-  return jwt.sign({}, getJwtSecret(), {
-    subject: user.id,
-    expiresIn: "8h",
-  });
 }
 
 export async function register(req: Request, res: Response) {
@@ -57,7 +49,9 @@ export async function register(req: Request, res: Response) {
     subject: "Bienvenido a StockFácil",
     text: `Hola ${user.nombre}, tu cuenta ${rol} fue creada correctamente.`,
   });
-  res.status(201).json({ token: createToken(user), user: publicUser(user) });
+  res
+    .status(201)
+    .json({ token: createAccessToken(user.id), user: publicUser(user) });
 }
 
 export async function login(req: Request, res: Response) {
@@ -71,7 +65,7 @@ export async function login(req: Request, res: Response) {
   )
     throw new AppError("Correo o contraseña incorrectos", 401);
   if (!user.activo) throw new AppError("La cuenta está desactivada", 403);
-  res.json({ token: createToken(user), user: publicUser(user) });
+  res.json({ token: createAccessToken(user.id), user: publicUser(user) });
 }
 
 export async function me(req: Request, res: Response) {

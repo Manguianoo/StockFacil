@@ -6,13 +6,13 @@ import prettier from "eslint-config-prettier";
 
 export default defineConfig([
   {
-    ignores: ["dist/**", "node_modules/**", "jest.config.js"], //ignorar archivos generados y configuración CommonJS
+    ignores: ["dist/**", "node_modules/**", "jest.config.js"],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     plugins: { js },
     extends: ["js/recommended"],
-    languageOptions: { globals: globals.browser },
+    languageOptions: { globals: { ...globals.browser, io: "readonly" } },
   },
 
   ...tseslint.configs.recommended,
@@ -22,11 +22,11 @@ export default defineConfig([
   {
     files: ["src/**/*.ts"],
     languageOptions: {
-      globals: { ...globals.node }, //... clonamos pero no traemos referencia
+      globals: { ...globals.node },
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [
-        "warn", //aviso pero te deja continuar, 'error' para que no deje continuar
+        "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
