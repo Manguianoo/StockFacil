@@ -1,109 +1,105 @@
-# StockFácil
+# Documentación técnica de StockFácil
 
-Sistema web para la administración de inventario en microempresas como tiendas de abarrotes, papelerías, misceláneas y pequeños comercios familiares.
+## Alcance actual
 
-## Descripción
+La aplicación cubre el flujo básico de un inventario: alta de catálogos, movimientos de mercancía, ventas, reportes y control de usuarios. La API y la interfaz web se sirven desde el mismo proceso de Express.
 
-StockFácil permite registrar productos, controlar entradas y salidas de mercancía, consultar existencias, detectar productos con bajo stock y registrar ventas básicas. Es una alternativa accesible para negocios que actualmente dependen de libretas, hojas de cálculo o conteos manuales.
+## Organización del proyecto
 
-La solución estará orientada a microempresas que necesitan una herramienta sencilla, rápida y de bajo costo para operar su inventario diario sin requerir infraestructura compleja.
+```text
+public/                 interfaz web
+src/
+  config/               conexión a MongoDB y Socket.IO
+  controllers/          reglas de cada recurso
+  middlewares/          autenticación y manejo de errores
+  models/               esquemas de Mongoose
+  routes/               rutas de Express
+  services/             JWT, correo, sockets y alertas
+  __tests__/            pruebas de integración y demo avanzada
+```
 
-## Tecnologías
+`src/index.ts` conecta la base de datos, crea el servidor HTTP y monta Socket.IO. `src/app.ts` prepara Express y puede utilizarse por separado en las pruebas. La lógica compartida de autenticación está en `src/services/authService.ts`, por lo que HTTP y sockets validan los tokens de la misma manera.
 
-- **Node.js** — entorno de ejecución
-- **TypeScript** — lenguaje principal
-- **Express 5** — framework para el servidor
-- **MongoDB** — base de datos
-- **ESLint** — linter
-- **Prettier** — formato de código
-- **Jest** — pruebas
+## Autenticación y permisos
 
-## Estado de implementación
+Las contraseñas se guardan con bcrypt. Al iniciar sesión se entrega un JWT con vigencia de ocho horas. El middleware busca el encabezado `Authorization` y carga al usuario activo antes de permitir el acceso.
 
-La aplicación ya cuenta con interfaz web adaptable, conexión MongoDB mediante Mongoose, modelos persistentes, CRUD, autenticación JWT, permisos por rol, correo SMTP opcional, actualizaciones con Socket.IO, validaciones, transacciones, manejo centralizado de errores y pruebas de integración.
+La primera cuenta del sistema recibe el rol `administrador`. Después de ese registro, solo un administrador puede crear cuentas adicionales.
 
-### Arquitectura
+| Acción                               | Administrador | Operador |
+| ------------------------------------ | :-----------: | :------: |
+| Consultar productos y catálogos      |      Sí       |    Sí    |
+| Registrar entradas, salidas y ventas |      Sí       |    Sí    |
+| Crear, editar o eliminar catálogos   |      Sí       |    No    |
+| Consultar y enviar reportes          |      Sí       |    No    |
+| Crear usuarios                       |      Sí       |    No    |
 
-- `src/config`: conexión y ciclo de vida de MongoDB.
-- `src/models`: esquemas de categorías, proveedores, productos, movimientos y ventas.
-- `src/controllers`: reglas del negocio y operaciones persistentes.
-- `src/routes`: endpoints REST.
-- `src/middlewares`: respuestas de errores y rutas inexistentes.
-- `src/__tests__`: demo automatizada del CRUD con MongoDB temporal.
-- `src/services`: correo, eventos en tiempo real y alertas de stock.
-- `public`: interfaz web de administración y operación.
+La recuperación de contraseña genera un token aleatorio. En la base de datos solo se conserva su hash y caduca a los 30 minutos.
 
-### Reglas y validaciones
+## Correos
 
-- Los campos obligatorios se validan antes de escribir.
-- SKU y nombre de categoría son únicos.
-- Precios y existencias no aceptan números negativos.
-- Categorías y proveedores referenciados deben existir.
-- No se permiten salidas o ventas sin stock suficiente.
-- Las ventas calculan el total desde el precio guardado del producto y descuentan inventario.
-- No se elimina una categoría o proveedor que todavía tenga productos asociados.
-- Identificadores inválidos, duplicados y recursos inexistentes producen respuestas HTTP consistentes.
+Nodemailer usa las variables `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` y `EMAIL_FROM`. Si SMTP no está configurado, el servidor sigue funcionando y registra que el mensaje fue omitido.
 
-## Base de datos
+Los correos se usan en estos casos:
 
-El proyecto utiliza **MongoDB** como base de datos principal. La información de productos, categorías, proveedores, inventario y ventas se almacena en colecciones documentales. Los reportes se calculan sobre esos datos.
+- bienvenida al crear una cuenta;
+- enlace para restablecer la contraseña;
+- aviso de stock bajo para administradores;
+- resumen de ventas e inventario solicitado desde Reportes.
 
-MongoDB se eligió porque permite manejar estructuras flexibles, facilita el crecimiento del sistema y se adapta bien a un inventario donde los productos pueden tener datos variables según el giro del negocio.
-
-## Roles y permisos
-
-StockFácil aplica roles mediante tokens JWT y middleware de autorización:
-
-- **Administrador**: podrá gestionar usuarios, productos, categorías, proveedores, inventario, ventas y reportes. También tendrá acceso a la configuración general del sistema.
-- **Usuario operativo**: podrá consultar productos, registrar movimientos de inventario y capturar ventas, pero no podrá modificar configuraciones sensibles ni administrar usuarios.
-
-Esta separación ayuda a proteger la información del negocio y evita que usuarios operativos realicen cambios administrativos por error.
-
-## Envío de correos
-
-El sistema envía correos mediante SMTP configurable para apoyar procesos importantes del negocio, como:
-
-- Confirmación de usuarios registrados.
-- Envío de reportes de inventario o ventas.
-- Notificaciones de productos con bajo stock.
-- Avisos relacionados con faltantes o movimientos relevantes del inventario.
-
-Estas notificaciones permitirán que los administradores reaccionen con mayor rapidez ante situaciones importantes del negocio.
+Las notificaciones automáticas se envían sin bloquear la respuesta HTTP. El endpoint de reporte sí espera el resultado y devuelve `503` cuando no existe una configuración SMTP.
 
 ## Comunicación en tiempo real
 
-StockFácil utiliza Socket.IO para reflejar cambios relevantes sin que el usuario tenga que recargar manualmente la página.
+Socket.IO comparte el servidor HTTP de Express. Cada cliente manda el JWT en `handshake.auth.token`; una cuenta inexistente, inactiva o con token inválido no puede conectarse.
 
-Esta funcionalidad será útil para actualizar existencias, mostrar alertas de bajo stock, registrar ventas recientes y mantener sincronizada la información cuando varias personas estén usando el sistema al mismo tiempo.
+| Evento                   | Momento en que se emite                   |
+| ------------------------ | ----------------------------------------- |
+| `producto:creado`        | Después de guardar un producto            |
+| `producto:actualizado`   | Después de editar un producto             |
+| `inventario:actualizado` | Al confirmar una entrada o salida         |
+| `venta:registrada`       | Al confirmar una venta                    |
+| `stock:bajo`             | Cuando una operación deja stock en mínimo |
 
-## Diferenciador competitivo
+La interfaz escucha estos eventos y vuelve a consultar los datos. Esto evita mantener dos implementaciones distintas de las reglas del inventario en cliente y servidor.
 
-StockFácil se diferencia de otros sistemas de inventario porque está pensado específicamente para microempresas y pequeños comercios locales. A diferencia de soluciones más complejas o costosas, el sistema busca ofrecer:
+## Consistencia de inventario
 
-- Interfaz sencilla para usuarios sin experiencia técnica.
-- Funciones enfocadas en inventario, ventas básicas y alertas de stock.
-- Bajo costo de implementación y operación.
-- Roles claros para separar administración y operación.
-- Notificaciones y reportes útiles para la toma de decisiones.
-- Actualización en tiempo real para negocios con más de un usuario operativo.
+Las salidas y ventas validan que exista stock suficiente. MongoDB ejecuta la actualización del producto, el movimiento y la venta dentro de una transacción. Por esa razón se requiere un replica set o MongoDB Atlas.
 
-El objetivo es que StockFácil sea una herramienta práctica para negocios que necesitan digitalizar su operación sin adoptar un sistema empresarial demasiado amplio o difícil de mantener.
+Una venta toma el precio guardado en el producto, calcula los subtotales, descuenta existencias y genera un movimiento por cada producto. Si cualquier escritura falla, MongoDB revierte el conjunto completo.
 
-## Requisitos previos
+## Errores y validación
 
-- Node.js v18 o superior
-- npm v9 o superior
+Los controladores validan campos obligatorios y relaciones antes de escribir. Los esquemas aplican longitudes, valores mínimos, listas permitidas e índices únicos. El middleware de errores convierte los problemas conocidos en respuestas JSON:
 
-## Scripts
+- `400`: datos o identificadores inválidos;
+- `401`: falta autenticación;
+- `403`: el rol no tiene permiso;
+- `404`: recurso inexistente;
+- `409`: duplicado, dependencia o stock insuficiente;
+- `500`: error no controlado;
+- `503`: correo solicitado sin SMTP disponible.
 
-| Comando                | Descripción                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| `npm run dev`          | Inicia el servidor en modo desarrollo con recarga automática |
-| `npm run build`        | Compila el proyecto TypeScript a JavaScript                  |
-| `npm run build:clean`  | Limpia la carpeta `dist/` y compila de nuevo                 |
-| `npm start`            | Inicia el servidor en modo producción                        |
-| `npm run lint`         | Revisa el código con ESLint                                  |
-| `npm run lint:fix`     | Corrige automáticamente los errores de ESLint                |
-| `npm run format`       | Formatea el código con Prettier                              |
-| `npm run format:check` | Verifica el formato sin modificar archivos                   |
-| `npm test`             | Corre las pruebas                                            |
+## Pruebas
+
+`crud.test.ts` comprueba categorías, productos, inventario, ventas, validaciones y permisos. `advanced.test.ts` levanta servicios locales temporales y demuestra:
+
+1. conexión de Socket.IO con JWT;
+2. rechazo de un socket sin token;
+3. recepción del evento `producto:creado`;
+4. envío de un mensaje a un servidor SMTP de prueba.
+
+```bash
+npm test -- --runInBand
+npm run demo:advanced
+```
+
+Las pruebas usan una base MongoDB temporal en modo replica set y no modifican los datos del entorno de desarrollo.
+
+## Aspectos pendientes para producción
+
+- El token del navegador se conserva en `localStorage`; una versión pública debería evaluar cookies `httpOnly` y protección CSRF.
+- Los eventos se transmiten a todos los usuarios conectados. Si el sistema maneja varios negocios, se necesitan salas separadas por negocio.
+- Los correos automáticos no tienen cola ni reintentos persistentes.
+- Falta agregar rate limiting para login y recuperación de contraseña.
