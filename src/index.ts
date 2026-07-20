@@ -1,6 +1,6 @@
 import { createApp } from "./app";
 import dotenv from "dotenv";
-import { connectDatabase } from "./config/database";
+import { connectDatabase, disconnectDatabase } from "./config/database";
 import { createServer } from "http";
 import { createRealtimeServer } from "./config/realtime";
 
@@ -16,6 +16,16 @@ async function start() {
   server.listen(PORT, () =>
     console.log(`Servidor corriendo en http://localhost:${PORT}`),
   );
+
+  const shutdown = (signal: string) => {
+    console.log(`Cerrando servidor por ${signal}`);
+    server.close(() => {
+      void disconnectDatabase().finally(() => process.exit(0));
+    });
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
 
 start().catch((error) => {

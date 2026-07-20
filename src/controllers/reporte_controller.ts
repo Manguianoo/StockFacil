@@ -4,6 +4,7 @@ import { Venta } from "../models/Venta";
 import { MovimientoInventario } from "../models/MovimientoInventario";
 import { AppError } from "../errors/AppError";
 import { sendEmail } from "../services/emailService";
+import { parseOptionalDate } from "../utils/validation";
 
 export async function getReporteStockBajo(_req: Request, res: Response) {
   const productos = await Producto.find({
@@ -13,12 +14,13 @@ export async function getReporteStockBajo(_req: Request, res: Response) {
   res.json({ cantidad: productos.length, productos });
 }
 export async function getReporteVentas(req: Request, res: Response) {
-  const desde = req.query.desde
-    ? new Date(String(req.query.desde))
-    : new Date(0);
-  const hasta = req.query.hasta
-    ? new Date(String(req.query.hasta))
-    : new Date();
+  const desde = parseOptionalDate(req.query.desde, new Date(0));
+  const hasta = parseOptionalDate(req.query.hasta, new Date());
+  if (desde > hasta)
+    throw new AppError(
+      "La fecha inicial no puede ser posterior a la final",
+      400,
+    );
   const ventas = await Venta.find({ createdAt: { $gte: desde, $lte: hasta } });
   res.json({
     cantidad: ventas.length,

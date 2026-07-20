@@ -18,6 +18,18 @@ const date = (value) =>
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+const escapeHtml = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character],
+  );
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -184,7 +196,7 @@ async function refreshAll() {
   }
 }
 function optionList(items, label) {
-  return `<option value="">Selecciona</option>${items.map((item) => `<option value="${item._id}">${label(item)}</option>`).join("")}`;
+  return `<option value="">Selecciona</option>${items.map((item) => `<option value="${escapeHtml(item._id)}">${escapeHtml(label(item))}</option>`).join("")}`;
 }
 function render() {
   const active = state.products.filter((p) => p.activo);
@@ -199,7 +211,7 @@ function render() {
     ? low
         .map(
           (p) =>
-            `<div><div><b>${p.nombre}</b><small>${p.sku}</small></div><span class="badge">${p.stock} / ${p.stockMinimo}</span></div>`,
+            `<div><div><b>${escapeHtml(p.nombre)}</b><small>${escapeHtml(p.sku)}</small></div><span class="badge">${p.stock} / ${p.stockMinimo}</span></div>`,
         )
         .join("")
     : "<p>No hay productos con stock bajo.</p>";
@@ -217,13 +229,13 @@ function render() {
   $("#inventoryTable").innerHTML = state.movements
     .map(
       (m) =>
-        `<tr><td>${date(m.createdAt)}</td><td>${m.producto?.nombre || "Producto eliminado"}</td><td>${m.tipo}</td><td>${m.cantidad}</td><td>${m.stockAnterior} → ${m.stockNuevo}</td></tr>`,
+        `<tr><td>${date(m.createdAt)}</td><td>${escapeHtml(m.producto?.nombre || "Producto eliminado")}</td><td>${escapeHtml(m.tipo)}</td><td>${m.cantidad}</td><td>${m.stockAnterior} → ${m.stockNuevo}</td></tr>`,
     )
     .join("");
   $("#salesTable").innerHTML = state.sales
     .map(
       (sale) =>
-        `<tr><td>${date(sale.createdAt)}</td><td>${sale.productos.map((p) => `${p.cantidad}× ${p.producto?.nombre || "Producto"}`).join(", ")}</td><td>${money(sale.total)}</td><td>${sale.registradaPor?.nombre || "Sin registro"}</td></tr>`,
+        `<tr><td>${date(sale.createdAt)}</td><td>${sale.productos.map((p) => `${p.cantidad}× ${escapeHtml(p.producto?.nombre || "Producto")}`).join(", ")}</td><td>${money(sale.total)}</td><td>${escapeHtml(sale.registradaPor?.nombre || "Sin registro")}</td></tr>`,
     )
     .join("");
 }
@@ -233,7 +245,7 @@ function renderProducts() {
     .filter((p) => `${p.nombre} ${p.sku}`.toLowerCase().includes(term))
     .map(
       (p) =>
-        `<tr><td><b>${p.nombre}</b></td><td>${p.sku}</td><td>${p.categoria?.nombre || "—"}</td><td>${money(p.precio)}</td><td class="${p.stock <= p.stockMinimo ? "stock-low" : ""}">${p.stock}</td></tr>`,
+        `<tr><td><b>${escapeHtml(p.nombre)}</b></td><td>${escapeHtml(p.sku)}</td><td>${escapeHtml(p.categoria?.nombre || "—")}</td><td>${money(p.precio)}</td><td class="${p.stock <= p.stockMinimo ? "stock-low" : ""}">${p.stock}</td></tr>`,
     )
     .join("");
 }
@@ -319,7 +331,7 @@ async function loadAdminData() {
   $("#usersList").innerHTML = users
     .map(
       (u) =>
-        `<div><div><b>${u.nombre}</b><small>${u.email}</small></div><span class="badge">${u.rol}</span></div>`,
+        `<div><div><b>${escapeHtml(u.nombre)}</b><small>${escapeHtml(u.email)}</small></div><span class="badge">${escapeHtml(u.rol)}</span></div>`,
     )
     .join("");
 }

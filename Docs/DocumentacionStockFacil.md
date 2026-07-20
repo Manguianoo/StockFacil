@@ -15,7 +15,7 @@ src/
   models/               esquemas de Mongoose
   routes/               rutas de Express
   services/             JWT, correo, sockets y alertas
-  __tests__/            pruebas de integración y demo avanzada
+  __tests__/            pruebas unitarias, de integración y demo avanzada
 ```
 
 `src/index.ts` conecta la base de datos, crea el servidor HTTP y monta Socket.IO. `src/app.ts` prepara Express y puede utilizarse por separado en las pruebas. La lógica compartida de autenticación está en `src/services/authService.ts`, por lo que HTTP y sockets validan los tokens de la misma manera.
@@ -83,7 +83,7 @@ Los controladores validan campos obligatorios y relaciones antes de escribir. Lo
 
 ## Pruebas
 
-`crud.test.ts` comprueba categorías, productos, inventario, ventas, validaciones y permisos. `advanced.test.ts` levanta servicios locales temporales y demuestra:
+`unit/validation.test.ts` comprueba de forma aislada campos obligatorios, actualizaciones vacias y conversion de fechas. `crud.test.ts` comprueba categorias, productos, inventario, ventas, validaciones, health check y permisos. `advanced.test.ts` levanta servicios locales temporales y demuestra:
 
 1. conexión de Socket.IO con JWT;
 2. rechazo de un socket sin token;
@@ -91,6 +91,8 @@ Los controladores validan campos obligatorios y relaciones antes de escribir. Lo
 4. envío de un mensaje a un servidor SMTP de prueba.
 
 ```bash
+npm run test:unit
+npm run test:integration
 npm test -- --runInBand
 npm run demo:advanced
 ```
@@ -103,3 +105,7 @@ Las pruebas usan una base MongoDB temporal en modo replica set y no modifican lo
 - Los eventos se transmiten a todos los usuarios conectados. Si el sistema maneja varios negocios, se necesitan salas separadas por negocio.
 - Los correos automáticos no tienen cola ni reintentos persistentes.
 - Falta agregar rate limiting para login y recuperación de contraseña.
+
+## Preparacion para despliegue
+
+`render.yaml` describe el servicio de Render, fija Node 20 y configura `/health` como health check. El proceso atiende `SIGTERM` y `SIGINT`, deja de aceptar conexiones y cierra MongoDB antes de terminar. La guia completa se encuentra en [EntregaFinal.md](EntregaFinal.md).

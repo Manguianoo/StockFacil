@@ -201,3 +201,28 @@ test("autentica usuarios y aplica permisos por rol", async () => {
       .status,
   ).toBe(200);
 });
+
+test("expone el estado de salud de la aplicacion", async () => {
+  const response = await request(app).get("/health");
+  expect(response.status).toBe(200);
+  expect(response.body).toMatchObject({
+    status: "ok",
+    database: "connected",
+  });
+});
+
+test("valida el rango de fechas del reporte de ventas", async () => {
+  const invalidDate = await request(app)
+    .get("/reportes/ventas?desde=no-es-fecha")
+    .set("Authorization", authorization);
+  expect(invalidDate.status).toBe(400);
+  expect(invalidDate.body.error).toBe("La fecha proporcionada no es válida");
+
+  const reversedRange = await request(app)
+    .get("/reportes/ventas?desde=2026-07-21&hasta=2026-07-20")
+    .set("Authorization", authorization);
+  expect(reversedRange.status).toBe(400);
+  expect(reversedRange.body.error).toBe(
+    "La fecha inicial no puede ser posterior a la final",
+  );
+});

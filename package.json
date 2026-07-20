@@ -1,10 +1,12 @@
 {
-  "name": "proyecto",
+  "name": "stockfacil",
   "version": "1.0.0",
-  "description": "",
+  "description": "Sistema web de inventario y ventas para comercios pequenos",
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "test:unit": "jest --runInBand src/__tests__/unit",
+    "test:integration": "jest --runInBand src/__tests__/crud.test.ts src/__tests__/advanced.test.ts",
     "demo:advanced": "jest --runInBand src/__tests__/advanced.test.ts",
     "build": "tsc",
     "build:clean": "rimraf dist && npm run build",
@@ -19,6 +21,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20 <23"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",

@@ -51,3 +51,5 @@ Las pruebas generales cubren CRUD, inventario, ventas, validaciones y permisos. 
 - `Docs/DiagramaBaseDatos.md`: versión del modelo que corresponde al código actual.
 - `src/__tests__/crud.test.ts`: evidencia automatizada del CRUD y permisos.
 - `src/__tests__/advanced.test.ts`: evidencia automatizada de correo y sockets.
+- `src/__tests__/unit/validation.test.ts`: evidencia de pruebas unitarias aisladas.
+- `render.yaml`: configuracion reproducible de despliegue y health check.

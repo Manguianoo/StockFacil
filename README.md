@@ -38,15 +38,17 @@ La aplicación queda disponible en `http://localhost:3000`. La primera cuenta re
 
 ## Scripts
 
-| Comando                 | Uso                                                      |
-| ----------------------- | -------------------------------------------------------- |
-| `npm run dev`           | Inicia el proyecto con recarga automática                |
-| `npm run build`         | Compila TypeScript en `dist`                             |
-| `npm start`             | Ejecuta la versión compilada                             |
-| `npm test`              | Ejecuta todas las pruebas                                |
-| `npm run demo:advanced` | Demuestra correo, autenticación de sockets y tiempo real |
-| `npm run lint`          | Revisa el código con ESLint                              |
-| `npm run format:check`  | Comprueba el formato sin modificar archivos              |
+| Comando                    | Uso                                                      |
+| -------------------------- | -------------------------------------------------------- |
+| `npm run dev`              | Inicia el proyecto con recarga automática                |
+| `npm run build`            | Compila TypeScript en `dist`                             |
+| `npm start`                | Ejecuta la versión compilada                             |
+| `npm test`                 | Ejecuta todas las pruebas                                |
+| `npm run test:unit`        | Ejecuta solo las pruebas unitarias puras                 |
+| `npm run test:integration` | Ejecuta pruebas con API, MongoDB, sockets y SMTP         |
+| `npm run demo:advanced`    | Demuestra correo, autenticación de sockets y tiempo real |
+| `npm run lint`             | Revisa el código con ESLint                              |
+| `npm run format:check`     | Comprueba el formato sin modificar archivos              |
 
 ## Rutas principales
 
@@ -62,9 +64,15 @@ La aplicación queda disponible en `http://localhost:3000`. La primera cuenta re
 
 Las rutas del negocio reciben el token en `Authorization: Bearer <token>`. Los permisos exactos y el flujo interno se explican en la [documentación técnica](Docs/DocumentacionStockFacil.md).
 
+## Despliegue
+
+El repositorio incluye `render.yaml` para desplegar la aplicacion como un Web Service. El servicio requiere `MONGODB_URI`, `APP_URL` y un `JWT_SECRET`; las variables SMTP son opcionales. El endpoint `GET /health` sirve como comprobacion de disponibilidad y conexion a la base de datos. Los pasos completos estan en la [entrega final](Docs/EntregaFinal.md).
+
 ## Documentos de la entrega
 
 - [Demo de funcionalidades avanzadas](Docs/DemoFuncionalidadesAvanzadas.md)
+- [Entrega final](Docs/EntregaFinal.md)
+- [Guion de demo final](Docs/GuionDemoFinal.md)
 - [Documentación técnica](Docs/DocumentacionStockFacil.md)
 - [Evidencia del equipo](Docs/EvidenciaEquipo.md)
 - [Diagrama de base de datos](Docs/DiagramaBaseDatos.md)
