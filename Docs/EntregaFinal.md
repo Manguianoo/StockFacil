@@ -73,6 +73,13 @@ Las variables SMTP son opcionales para inventario y ventas, pero son necesarias 
 
 El archivo `render.yaml` define un Web Service con Node 20, compilacion, arranque y health check.
 
+La aplicacion quedo desplegada en:
+
+- Aplicacion: [https://stockfacil-bkt2.onrender.com](https://stockfacil-bkt2.onrender.com)
+- Estado y base de datos: [https://stockfacil-bkt2.onrender.com/health](https://stockfacil-bkt2.onrender.com/health)
+
+El servicio usa MongoDB Atlas y al verificarlo el endpoint de salud respondio `200` con `database: connected`.
+
 1. Crear un cluster de MongoDB Atlas y permitir conexiones desde Render.
 2. En Render, crear un Blueprint a partir del repositorio.
 3. Capturar `MONGODB_URI` y `APP_URL`; Render genera `JWT_SECRET`.
@@ -81,6 +88,8 @@ El archivo `render.yaml` define un Web Service con Node 20, compilacion, arranqu
 6. Abrir la URL publica y crear la primera cuenta administradora.
 
 No se deben subir secretos al repositorio. El valor de `APP_URL` debe cambiarse a la URL HTTPS final antes de probar recuperacion de contrasena.
+
+El envio real de correo requiere completar `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` y `EMAIL_FROM` en Render. Sin esas credenciales, el resto de la aplicacion funciona y las pruebas automatizadas de correo se ejecutan con un servidor SMTP temporal.
 
 ## Pruebas y calidad
 

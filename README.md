@@ -68,6 +68,8 @@ Las rutas del negocio reciben el token en `Authorization: Bearer <token>`. Los p
 
 El repositorio incluye `render.yaml` para desplegar la aplicacion como un Web Service. El servicio requiere `MONGODB_URI`, `APP_URL` y un `JWT_SECRET`; las variables SMTP son opcionales. El endpoint `GET /health` sirve como comprobacion de disponibilidad y conexion a la base de datos. Los pasos completos estan en la [entrega final](Docs/EntregaFinal.md).
 
+La version desplegada se puede probar en [stockfacil-bkt2.onrender.com](https://stockfacil-bkt2.onrender.com). Como se usa el plan gratuito de Render, la primera carga puede tardar cerca de un minuto si el servicio estaba inactivo.
+
 ## Documentos de la entrega
 
 - [Demo de funcionalidades avanzadas](Docs/DemoFuncionalidadesAvanzadas.md)
