@@ -13,8 +13,8 @@ StockFacil es una aplicacion web para que comercios pequenos controlen productos
 | Pruebas unitarias      | `src/__tests__/unit/validation.test.ts`                                                                              |
 | Pruebas de integracion | `src/__tests__/crud.test.ts` y `src/__tests__/advanced.test.ts`                                                      |
 | Preparar despliegue    | `render.yaml`, `engines.node`, `GET /health` y variables en `.env.example`                                           |
-| Documentacion final    | Este documento, README, documentacion tecnica, diagrama, evidencia y guion de demo                                   |
-| Demo completa          | `Docs/GuionDemoFinal.md` y demo automatizada `npm run demo:advanced`                                                 |
+| Documentacion final    | Este documento, README, documentacion tecnica, diagrama y evidencia                                                  |
+| Demo completa          | Demo automatizada `npm run demo:advanced`                                                                            |
 | Presentacion final     | `Docs/PresentacionFinalStockFacil.pptx` y su version PDF                                                             |
 
 ## Arquitectura
@@ -122,4 +122,3 @@ Pendientes recomendados para una version comercial: rate limiting, cookies `http
 - [Diagrama de base de datos](DiagramaBaseDatos.md)
 - [Evidencia del equipo](EvidenciaEquipo.md)
 - [Demo de funciones avanzadas](DemoFuncionalidadesAvanzadas.md)
-- [Guion de demo final](GuionDemoFinal.md)

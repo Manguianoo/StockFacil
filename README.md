@@ -74,7 +74,6 @@ La version desplegada se puede probar en [stockfacil-bkt2.onrender.com](https://
 
 - [Demo de funcionalidades avanzadas](Docs/DemoFuncionalidadesAvanzadas.md)
 - [Entrega final](Docs/EntregaFinal.md)
-- [Guion de demo final](Docs/GuionDemoFinal.md)
 - [Documentación técnica](Docs/DocumentacionStockFacil.md)
 - [Evidencia del equipo](Docs/EvidenciaEquipo.md)
 - [Diagrama de base de datos](Docs/DiagramaBaseDatos.md)
